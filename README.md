@@ -10,7 +10,16 @@
 相对应的环境以及预训练模型和数据集下载完毕，执行MyTrain.py即可进行模型的训练。已经训练好的模型链接：通过网盘分享的文件：KKK_best_47-5.7-ours.pth
 链接: https://pan.baidu.com/s/1nz_E-tiGLIE8u1NN3rixJA?pwd=mgc1 提取码: mgc1。
 # 测试
-对训练好的模型进行测试，所测试得到的并非是模型的性能评估指标，而是根据训练好模型得到的二值化图像。
+对训练好的模型进行测试，所测试得到的并非是模型的性能评估指标，而是根据训练好模型得到的二值化图像。   
+# 改进
+1.数据准备：通过随机水平翻转、随机中心裁剪、随机旋转、颜色增强和增加噪声进行图像数据增强。
+2.主干网络改进：将原始 SINet-V2 的主干网络 Res2Net50 替换为 PVTv2，增强了模
+型对全局上下文和多尺度特征的建模能力，提升了复杂背景下的目标识别精度。
+3.引入改进 CBAM 注意力机制：在纹理增强模块和解码模块后引入改进的 CBAM 注
+意力机制，可以实现模型对重点区域的关注，抑制非关键的信息，同时提高模型训练的
+稳定性，加速模型的收敛。
+4.优化 GRA 模块的分组方式和损失函数：改进了 GRA 模块的动态分组策略，将其由
+静态分组改为动态分组方式，优化了特征分组的计算效率与代码可维护性。
 # 性能评估
 可参考github中PySODMetrics-main项目，或根据新metric.py脚本进行模型的性能评估，在此脚本中需要上传原本的测试集中的GT图像，以及训练好的模型的道德测试图像。
 # GUI界面
@@ -19,6 +28,10 @@
 ![image](https://github.com/user-attachments/assets/0b463f55-029f-4fc6-80b2-c621b1f42aa5)
 
 ![image](https://github.com/user-attachments/assets/87cc27cf-98c6-4998-b531-85fa20b62ce1)
+
+# 消融实验
+<img width="531" height="543" alt="image" src="https://github.com/user-attachments/assets/3b8f827e-d77e-42c6-a254-51b52ab517e1" />
+
 
 
 
