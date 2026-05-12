@@ -24,10 +24,10 @@ class CBAM(nn.Module):
             nn.BatchNorm2d(1),
             nn.Sigmoid()
         )
-        # 优化4：参数初始化
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+        # 仅初始化顶层 Conv2d（避免覆盖 channel_attention/spatial_attention 内部已设计的权重）
+        for m in [self.channel_attention, self.spatial_attention]:
+            if isinstance(m[0], nn.Conv2d):
+                nn.init.kaiming_normal_(m[0].weight, mode='fan_out', nonlinearity='relu')
 
     def forward(self, x):
         # 保持原有流程，增加残差连接
@@ -53,6 +53,7 @@ class BasicConv2d(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         x = self.bn(x)
+        x = self.relu(x)
         return x
 
 

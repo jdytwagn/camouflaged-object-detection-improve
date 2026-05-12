@@ -50,32 +50,29 @@ def colorEnhance(image):
     return image
 
 
-def randomGaussian(image, mean=0.1, sigma=0.35):
-    def gaussianNoisy(im, mean=mean, sigma=sigma):
-        for _i in range(len(im)):
-            im[_i] += random.gauss(mean, sigma)
-        return im
-
-    img = np.asarray(image)
-    width, height = img.shape
-    img = gaussianNoisy(img[:].flatten(), mean, sigma)
-    img = img.reshape([width, height])
+def randomGaussianNoise(image, mean=0.1, sigma=0.35):
+    """添加高斯噪声（兼容 RGB 和灰度图）"""
+    img = np.asarray(image, dtype=np.float32)
+    noise = np.random.normal(mean, sigma, img.shape)
+    img = img + noise
+    img = np.clip(img, 0, 255)
     return Image.fromarray(np.uint8(img))
 
 
-def randomPeper(img):
+def randomPepperNoise(img, noise_ratio=0.0015):
+    """添加椒盐噪声（兼容 RGB 和灰度图）"""
     img = np.array(img)
-    noiseNum = int(0.0015 * img.shape[0] * img.shape[1])
-    for i in range(noiseNum):
-
-        randX = random.randint(0, img.shape[0] - 1)
-
-        randY = random.randint(0, img.shape[1] - 1)
-
-        if random.randint(0, 1) == 0:
-            img[randX, randY] = 0
+    h, w = img.shape[:2]
+    n_channels = img.shape[2] if img.ndim == 3 else 1
+    noise_num = int(noise_ratio * h * w)
+    for _ in range(noise_num):
+        x = random.randint(0, h - 1)
+        y = random.randint(0, w - 1)
+        if n_channels == 1:
+            img[x, y] = 0 if random.randint(0, 1) == 0 else 255
         else:
-            img[randX, randY] = 255
+            val = 0 if random.randint(0, 1) == 0 else 255
+            img[x, y, :] = val
     return Image.fromarray(img)
 
 
@@ -117,7 +114,7 @@ class CamObjDataset(data.Dataset):
         image, gt = randomRotation(image, gt)
 
         image = colorEnhance(image)
-        gt = randomPeper(gt)
+        gt = randomPepperNoise(gt)
 
         image = self.img_transform(image)
         gt = self.gt_transform(gt)

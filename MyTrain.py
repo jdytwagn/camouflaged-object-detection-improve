@@ -42,8 +42,7 @@ def hybrid_e_loss(pred, mask):
 
     return (wbce + eloss + wiou).mean()
 
-def train(train_loader, model, optimizer, epoch, save_path):
-    global step
+def train(train_loader, model, optimizer, epoch, save_path, step_counter):
     model.train()
     loss_all = 0
     epoch_step = 0
@@ -76,7 +75,7 @@ def train(train_loader, model, optimizer, epoch, save_path):
                 loss.backward()
                 clip_gradient(optimizer, opt.clip)
                 optimizer.step()
-                step += 1
+                step_counter['val'] += 1
                 epoch_step += 1
                 loss_all += loss.data
 
@@ -108,9 +107,7 @@ def train(train_loader, model, optimizer, epoch, save_path):
         raise
 
 
-def test(test_loader, model, epoch, save_path):
-    global best_mae, best_epoch
-
+def test(test_loader, model, epoch, save_path, best_state):
     model.eval()
     with torch.no_grad():
         mae_sum = 0
@@ -127,22 +124,22 @@ def test(test_loader, model, epoch, save_path):
         mae = mae_sum / test_loader.size
 
         if epoch == 1:
-            best_mae = mae
+            best_state['mae'] = mae
             print('[CAMO Cur Epoch: {}] Metrics MAE={}'.format(epoch, mae))
         else:
-            if mae < best_mae:
-                best_mae = mae
-                best_epoch = epoch
-                torch.save(model.state_dict(), save_path + 'KKK_best_{}.pth'.format(best_epoch))
+            if mae < best_state['mae']:
+                best_state['mae'] = mae
+                best_state['epoch'] = epoch
+                torch.save(model.state_dict(), save_path + 'KKK_best_{}.pth'.format(best_state['epoch']))
                 print('>>> save state_dict successfully! best epoch is {}.'.format(epoch))
             else:
                 print('>>> not find the best epoch -> continue training ...')
             print(
                 '[CAMO Cur Epoch: {}] Metrics MAE={}    [CAMO Best Epoch: {}] Metrics MAE={}'.format(
-                    epoch, mae, best_epoch, best_mae))
+                    epoch, mae, best_state['epoch'], best_state['mae']))
             logging.info(
                 '[CAMO Cur Epoch: {}] Metrics MAE={}    CAMO Best Epoch: {}] Metrics MAE={}'.format(
-                    epoch, mae, best_epoch, best_mae))
+                    epoch, mae, best_state['epoch'], best_state['mae']))
 
 
 if __name__ == '__main__':
@@ -216,10 +213,8 @@ if __name__ == '__main__':
     logging.info('>>> config: {}'.format(opt))
     print('>>> config: : {}'.format(opt))
 
-    step = 0
-
-    best_mae = 1
-    best_epoch = 0
+    step_counter = {'val': 0}
+    best_state = {'mae': 1, 'epoch': 0}
 
     cosine_schedule = optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=20, eta_min=1e-5)
     print("Start Training...")
@@ -230,5 +225,5 @@ if __name__ == '__main__':
         logging.info('>>> current lr: {}'.format(cosine_schedule.get_last_lr()[0]))
 
         # train
-        train(train_loader, model, optimizer, epoch, save_path)
-        test(val_loader, model, epoch, save_path)
+        train(train_loader, model, optimizer, epoch, save_path, step_counter)
+        test(val_loader, model, epoch, save_path, best_state)

@@ -10,14 +10,19 @@ import torch.nn.functional as F
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--testsize', type=int, default=352, help='testing size')
-    parser.add_argument('--pth_path', type=str, default=r'C:\Users\Lenovo\Desktop\ultralytics-main\KKK-Net-main\only-cbam-backbone.pth')
+    parser.add_argument('--pth_path', type=str, required=True,
+                        help='path to trained model checkpoint (.pth)')
+    parser.add_argument('--data_root', type=str, default='./Dataset/TestDataset/',
+                        help='root path to test datasets')
+    parser.add_argument('--save_root', type=str, default='./results/',
+                        help='path to save prediction maps')
     parser.add_argument('--model', type=str, default='PVTv2-B2',
                         choices=['PVTv2-B1', 'PVTv2-B2', 'PVTv2-B3', 'PVTv2-B4', 'PVTv2-B5'])
     parser.add_argument('--gpu_id', type=str, default='0',
                         help='train use gpu')
     opt = parser.parse_args()
 
-    txt_save_path = os.path.join('./backbone+cbam-only', os.path.basename(os.path.dirname(opt.pth_path)))
+    txt_save_path = os.path.join(opt.save_root, os.path.basename(os.path.dirname(opt.pth_path)))
     os.makedirs(txt_save_path, exist_ok=True)
 
     print('>>> configs:', opt)
@@ -29,17 +34,15 @@ if __name__ == '__main__':
     cudnn.benchmark = True
     model = Network(channel=64).cuda()
 
-    # TODO: remove FC layers from snapshots
+    # Load model weights
     model.load_state_dict(torch.load(opt.pth_path), strict=False)
     model.eval()
 
     for _data_name in ['COD10K','CAMO','NC4K','CHAMELEON']:
-        map_save_path = txt_save_path + "{}/".format(_data_name)
+        map_save_path = txt_save_path + "/{}/".format(_data_name)
         os.makedirs(map_save_path, exist_ok=True)
 
-        # data_path = './Dataset/TestDataset/{}'.format(_data_name)
-        data_path = 'D:\pycharm project\KKK-Net-main\Dataset\TestDataset/{}'.format(_data_name)
-        'D:\pycharm project\KKK-Net-main\Dataset\TestDataset'
+        data_path = os.path.join(opt.data_root, _data_name)
 
         image_root = '{}/Imgs/'.format(data_path)
         gt_root = '{}/GT/'.format(data_path)
